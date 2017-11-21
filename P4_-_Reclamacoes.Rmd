@@ -13,7 +13,7 @@ Este projeto consiste na análise das reclamações de consumidores brasileiros reg
 A estrutura da base de dados é mostrada na tabela abaixo.
 
 ```{r echo = FALSE, message = FALSE, warning = FALSE}
-#Importação das bibliotecas a serem usadas
+#importação das bibliotecas a serem usadas
 library(data.table)
 library(dplyr)
 library(ggplot2)
@@ -23,24 +23,26 @@ library(maptools)
 library(ggpubr)
 library(knitr)
 library(kableExtra)
+#alinha as figuras à direita
 knitr::opts_chunk$set(fig.align = "center")
+#seta as tabelas como html, para não ter que setar em todas tabelas
 options(knitr.table.format = "html") 
 ```
 
 
 ```{r echo = FALSE, message = FALSE, warning = FALSE, warning = FALSE}
-#Carrega o arquivo na memória
+#carrega o arquivo na memória
 filename = "D:/Udacity/P4/reclamacoes_2015-01.csv"
 rec = fread(filename, sep = ";")
 
-#Estrutura dos dados
+#estrutura dos dados
 str(rec)
 ```
 
 A base de dados possui 8619 reclamações e 24 variáveis.
 
 ```{r echo = FALSE, message = FALSE, warning = FALSE}
-#Tratamento de dados
+#tratamento de dados
 #unifica os nomes de empresas derivadas
 rec$Nome <- rec$`Nome Fantasia`
 rec$Nome[rec$Nome == 'Oi Fixo' | rec$Nome == 'Oi Celular'] <- 'Oi'
@@ -62,7 +64,7 @@ rec$Nome <- gsub(".com", "", rec$Nome)
 brasil <- readShapeSpatial("D:/Udacity/P4/Brasil/BRA_adm1.shp")
 brasil <- fortify(brasil, region = "NAME_1")
 
-#arruma os caracteres especiais
+#arruma os caracteres especiais dos estados
 brasil$id[brasil$id == "AmapÃ¡"] <- "Amapá"
 brasil$id[brasil$id == "CearÃ¡"] <- "Ceará"
 brasil$id[brasil$id == "EspÃrito Santo"] <- "Espírito Santo"
@@ -119,7 +121,7 @@ rec$Resolvida[rec$`Avaliação Reclamação` == "Não Avaliada"] <- 1
 Quem reclama mais, homens ou mulheres?
 
 ```{r echo = FALSE, message = FALSE, warning = FALSE}
-#Esta estrutura utilizando os pipes da biblioteca 'dplyr' será usado
+#esta estrutura utilizando os pipes da biblioteca 'dplyr' será usada
 #em todo o projeto
 #faz uma busca na base 'rec' e a salva em uma variável
 var <- rec %>%
@@ -147,6 +149,7 @@ ggplot(var, aes(x = reorder(`Sexo`, -n), y = n)) +
 Qual é a distribuição das reclamações pelas faixas etárias?
 
 ```{r echo = FALSE, message = FALSE, warning = FALSE}
+#busca o número de ocorrências e a frequência relativa de cada faixa etária
 var <- rec %>%
   select(`Faixa Etária`) %>%
   group_by(`Faixa Etária`) %>%
@@ -165,12 +168,14 @@ ggplot(var, aes(x = reorder(`Faixa Etária`, -n), y = n)) +
 Quais são os Segmentos de Mercado com maior número de reclamações?
 
 ```{r echo = FALSE, message = FALSE, warning = FALSE}
+#busca o número de ocorrências e a frequência relativa de cada segmento
 var <- rec %>%
   select(`Segmento de Mercado`) %>%
   group_by(`Segmento de Mercado`) %>%
   summarize(n = length(`Segmento de Mercado`)) %>%
   mutate(relFreq = n / sum(n)) %>%
   arrange(-n) %>%
+  #seleciona apenas os 5 primeiros
   slice(1:5)
 
 ggplot(var, aes(x = reorder(`Segmento de Mercado`, -n), y = n)) +
@@ -189,6 +194,7 @@ Aqui foram mostrados apenas os cinco Segmentos de Mercado com maior número de re
 Quais são os grupos de problema mais frequentes nas reclamações?
 
 ```{r echo = FALSE, message = FALSE, warning = FALSE}
+#busca o número de ocorrências e a frequência relativa de cada grupo problema
 var <- rec %>%
   select(`Grupo Problema`) %>%
   group_by(`Grupo Problema`) %>%
@@ -208,6 +214,8 @@ Qual é a proporção de reclamações resolvidas?
 Obs: Para responder esta pergunta, foi utilizado o mesmo critério descrito no dicionário de variáveis. Verificou-se os valores contidos na coluna 'Avaliação Reclamação' e os valores 'resolvida' e 'não avaliada' foram associados à 1 em uma coluna chamada 'Resolvida'. Já os valores iguais a 'não resolvida' foram associados à 0.  
 
 ```{r echo = FALSE, message = FALSE, warning = FALSE}
+#busca o número de ocorrências e a frequência relativa das reclamações
+#resolvidas ou não
 var <- rec %>%
   select(`Resolvida`) %>%
   group_by(`Resolvida`) %>%
@@ -226,6 +234,8 @@ ggplot(var, aes(x = as.factor(`Resolvida`), y = n)) +
 Considerando a coluna 'Avaliação Reclamação', qual é a porcentagem das reclamações não avaliadas?
 
 ```{r echo = FALSE, message = FALSE, warning = FALSE}
+#busca o número de ocorrências e a frequência relativa das reclamações
+#resolvidas, não resolvidas ou não avaliadas
 var <- rec %>%
   select(`Avaliação Reclamação`) %>%
   group_by(`Avaliação Reclamação`) %>%
@@ -244,6 +254,8 @@ ggplot(var, aes(x = reorder(`Avaliação Reclamação`, -n), y = n)) +
 Existem muitas reclamações não respondidas?
 
 ```{r echo = FALSE, message = FALSE, warning = FALSE}
+#busca o número de ocorrências e a frequência relativa das reclamações
+#respondidas ou não
 var <- rec %>%
   select(`Respondida`) %>%
   group_by(`Respondida`) %>%
@@ -263,6 +275,8 @@ Sabe-se que as empresas tem um prazo máximo de 10 dias para responder as reclama
 Qual é a distribuição das reclamações por estes 10 dias?
 
 ```{r echo = FALSE, message = FALSE, warning = FALSE}
+#busca o número de ocorrências e a frequência relativa para cada dia do
+#tempo de resposta
 var <- rec %>%
   select(`Tempo Resposta`) %>%
   group_by(`Tempo Resposta`) %>%
@@ -280,6 +294,7 @@ ggplot(var, aes(x = `Tempo Resposta`, y = n)) +
 Nota-se que a proporção é crescente conforme aumentam-se os dias. Mas qual é o tempo médio de resposta?
 
 ```{r echo = FALSE, message = FALSE, warning = FALSE}
+#faz a média do tempo de resposta omitindo os NA's
 mean(na.omit(rec$`Tempo Resposta`))
 ```
 A tempo médio de resposta é de aproximadamente 6,6 dias.
@@ -289,6 +304,7 @@ Sabe-se que os consumidores, ao avaliarem a empresa, dão uma nota de 1 à 5.
 Qual é a distribuição das avaliações por estas notas?
 
 ```{r echo = FALSE, message = FALSE, warning = FALSE}
+#busca o número de ocorrências e a frequência relativa para cada nota
 var <- na.omit(rec) %>%
   select(`Nota do Consumidor`) %>%
   group_by(`Nota do Consumidor`) %>%
@@ -306,6 +322,7 @@ ggplot(var, aes(x = `Nota do Consumidor`, y = n)) +
 Nota-se que as notas mínima e máxima são as mais representativas. Qual é a nota média?
 
 ```{r echo = FALSE, message = FALSE, warning = FALSE}
+#faz a nota média omitindo os NA's
 mean(na.omit(rec$`Nota do Consumidor`))
 ```
 
@@ -315,6 +332,7 @@ A nota média dada às reclamações é 3,1.
 Qual é a distribuição das reclamações pelos estados brasileiros?
 
 ```{r echo = FALSE, message = FALSE, warning = FALSE}
+#busca o número de ocorrências e a frequência relativa para estado
 var <- rec %>%
   select(`UF`) %>%
   group_by(`UF`) %>%
@@ -332,12 +350,14 @@ ggplot(var, aes(x = reorder(`UF`, -n), y = n)) +
 Quais são as empresas com maior número de reclamações?
 
 ```{r echo = FALSE, message = FALSE, warning = FALSE}
+#busca o número de ocorrências e a frequência relativa para cada empresa
 var <- rec %>%
   select(`Nome`) %>%
   group_by(`Nome`) %>%
   summarize(n = length(`Nome`)) %>%
   mutate(relFreq = n / sum(n)) %>%
   arrange(-n) %>%
+  #seleciona as 13 primeiras
   slice(1:13)
 
 ggplot(var, aes(x = reorder(`Nome`, -n), y = n)) +
@@ -355,6 +375,7 @@ Nesta seção, a fim de melhorar a visualização, serão filtrados os principais seg
 Qual é o perfil dos reclamantes?
 
 ```{r echo = FALSE, message = FALSE, warning = FALSE}
+#busca o número de ocorrências e a frequência relativa por segmento e por sexo
 var <- rec %>%
   select(`Segmento de Mercado`, Sexo) %>%
 #filtra os segmentos de mercado desejados
@@ -385,6 +406,9 @@ O sexo dos reclamantes é majoritariamente masculino em três dos quatro principai
 
 
 ```{r echo = FALSE, message = FALSE, warning = FALSE}
+#busca o número de ocorrências e a frequência relativa por segmento e por
+#faixa etária
+#cria a coluna 'pos' que dá a posição do rótulo de dados no gráfico
 var <- rec %>%
   select(`Segmento de Mercado`, Sexo, `Faixa Etária`) %>%
   filter(`Segmento de Mercado` == 
@@ -414,6 +438,8 @@ Em todos os segmentos de mercado a maioria dos reclamantes se concentra nas faix
 Há diferença na distribuição de notas pelas faixas etárias e sexo?
 
 ```{r echo = FALSE, message = FALSE, warning = FALSE}
+#busca o número de ocorrências e a frequência relativa por faixa etária e sexo
+#cria a coluna 'pos' que dá a posição do rótulo de dados no gráfico
 var <- na.omit(rec) %>%
   select(Sexo, `Faixa Etária`, `Nota do Consumidor`, `Segmento de Mercado`) %>%
   filter(`Segmento de Mercado` == 
@@ -450,7 +476,7 @@ ggplot(rec, aes(x = `Tempo Resposta`, y = `Nota do Consumidor`)) +
 ```
 
 ```{r echo = FALSE, message = FALSE, warning = FALSE}
-#faz o teste de correlação
+#faz o teste de correlação entre tempo de resposta e nota
 cor(complete.cases(rec$`Nota do Consumidor`),
     complete.cases(rec$`Tempo Resposta`))
 ```
@@ -458,6 +484,7 @@ cor(complete.cases(rec$`Nota do Consumidor`),
 O resultado do teste de correlação é 0,01, ou seja, não existe correlação entre tempo de resposta e a nota. Como já visto anteriormente, a quantidade de reclamações resolvidas é crescente até o dia limite para a resposta. Este gráfico deixa a impressão de que as notas 5 estão mais bem distribuídas pelos dias do tempo de resposta, enquanto as notas 1 estão mais concentradas no décimo dia. Para confirmar, utilizar-se-á um diagrama de caixa.
 
 ```{r echo = FALSE, message = FALSE, warning = FALSE}
+#faz o boxplot de tempo de resposta por nota
 var <- na.omit(rec)
 
 ggplot(var, aes(x =as.factor(`Nota do Consumidor`), y = `Tempo Resposta`)) +
@@ -468,6 +495,7 @@ ggplot(var, aes(x =as.factor(`Nota do Consumidor`), y = `Tempo Resposta`)) +
 Nota-se que a mediana da caixa das notas 1 se encontra maior do que as demais caixas e o corpo da caixa das notas 5 começa um pouco abaixo das demais. Isto significa que, apesar de não haver correlação entre tempo de resposta e nota, as reclamações de nota igual à 1 apresentam tempos de resposta ligeiramente maiores que as demais e as reclamações de nota igual à 5 apresenta tempos de resposta ligeiramente menores que as demais.
 
 ```{r echo = FALSE, message = FALSE, warning = FALSE}
+#busca a média do tempo de resposta por nota
 var <- na.omit(rec) %>%
   select(`Tempo Resposta`, `Nota do Consumidor`) %>%
   group_by(`Nota do Consumidor`) %>%
@@ -489,6 +517,7 @@ ggplot(rec, aes(x = Resolvida, y = `Nota do Consumidor`)) +
 ```
 
 ```{r echo = FALSE, message = FALSE, warning = FALSE}
+#faz a correlação entre 'resolvida' e nota
 var <- na.omit(rec)
 cor(var$`Nota do Consumidor`, var$Resolvida)
 ```
@@ -509,6 +538,8 @@ segsub <- subset(rec, `Segmento de Mercado` ==
     `Segmento de Mercado` ==
     'Operadoras de Telecomunicações (Telefonia, Internet, TV por assinatura)')
 
+#busca no subset recém criado o número de ocorrências e a frequência
+#relativa dos grupos de problema
 var <- segsub %>%
   select(`Segmento de Mercado`, `Grupo Problema`) %>%
   group_by(`Segmento de Mercado`, `Grupo Problema`) %>%
@@ -520,6 +551,7 @@ ggplot(var, aes(x = reorder(`Grupo Problema`, -n), y = n)) +
   geom_bar(stat = "identity") + 
   geom_text(aes(label = paste0(sprintf("%.0f", relFreq * 100),"%"),
                 vjust = -0.5), color = "Black") +
+  #replica o gráfico para cada segmento de mercado do subset
   facet_wrap(~`Segmento de Mercado`, ncol = 1) + 
   theme(axis.title.x = element_blank())
 ```
@@ -527,6 +559,7 @@ ggplot(var, aes(x = reorder(`Grupo Problema`, -n), y = n)) +
 Mas o que cada um desses grupos representa?
 
 ```{r results='asis', echo = FALSE, message = FALSE, warning = FALSE}
+#busca no subset o número de ocorrências por grupo problema e problema
 var <- segsub %>%
   select(`Grupo Problema`, `Problema`) %>%
   group_by(`Grupo Problema`, `Problema`) %>%
@@ -548,6 +581,9 @@ Já para o segmento 'Telecomunicações', observa-se que há um pico no grupo 'Cobra
 Dos segmentos de mercado mais importantes, como estão distribuídos os reclamantes por sexo e faixa etária?
 
 ```{r echo = FALSE, message = FALSE, warning = FALSE}
+#busca o número de ocorrências e a frequência relativa por faixa etária, sexo
+#e segmento
+#cria a coluna 'pos' que dá a posição do rótulo de dados no gráfico
 var <- rec %>%
   select(`Segmento de Mercado`, Sexo, `Faixa Etária`) %>%
   filter(`Segmento de Mercado` == 
@@ -579,6 +615,9 @@ Como visto anteriormente, a maioria dos reclamantes se concentra nas faixas de 2
 Há diferença na distribuição de notas pelas faixas etárias e sexo?
 
 ```{r echo = FALSE, message = FALSE, warning = FALSE}
+#busca o número de ocorrências e a frequência relativa por faixa etária, sexo
+#e nota
+#cria a coluna 'pos' que dá a posição do rótulo de dados no gráfico
 var <- na.omit(rec) %>%
   select(Sexo, `Faixa Etária`, `Nota do Consumidor`, `Segmento de Mercado`) %>%
   filter(`Segmento de Mercado` == 
@@ -617,11 +656,13 @@ ggplot(rec, aes(x = `Tempo Resposta`, y = `Nota do Consumidor`)) +
 
 
 ```{r echo = FALSE, message = FALSE, warning = FALSE}
+#faz a nota média por reclamação resolvida e não resolvida
 var <- na.omit(rec) %>%
   select(`Nota do Consumidor`, Resolvida) %>%
   group_by(Resolvida) %>%
   summarize(media = mean(`Nota do Consumidor`)) 
 
+#mostra a variável acima como tabela
 kable(var, position = "float_left", 
   caption = 'Nota média por Resolvida S/N')  %>%
   kable_styling(full_width = F)
@@ -629,11 +670,13 @@ kable(var, position = "float_left",
 
 
 ```{r echo = FALSE, message = FALSE, warning = FALSE}
+#faz o tempo médio de resposta por reclamação resolvida e não resolvida
 var <- na.omit(rec) %>%
   select(`Tempo Resposta`, Resolvida) %>%
   group_by(Resolvida) %>%
   summarize(media = mean(`Tempo Resposta`)) 
 
+#mostra a variável acima como tabela
 kable(var, position = "float_right",
   caption = 'Tempo médio de resposta por S/N') %>%
   kable_styling(full_width = F)
@@ -653,12 +696,15 @@ ggplot(segsub, aes(x = `Segmento de Mercado`, y = `Nota do Consumidor`)) +
 
 
 ```{r echo = FALSE, message = FALSE, warning = FALSE}
+#busca a nota média por por segmento para as reclamações resolvidas e não
+#resolvidas
 var <- na.omit(segsub) %>%
   select(`Segmento de Mercado`, `Nota do Consumidor`, Resolvida) %>%
   group_by(`Segmento de Mercado`) %>%
   summarize(resolvida = mean(`Nota do Consumidor`[Resolvida==1]),
             n_resolvida = mean(`Nota do Consumidor`[Resolvida==0])) 
 
+#mostra a variável acima como tabela
 kable(var, caption = 'Tempo médio de resposta por S/N') %>%
   kable_styling(full_width = F)
 ```
@@ -671,6 +717,7 @@ Qual é a distribuição das reclamações por grupo de problema, segmento de mercado
 ggplot(segsub, aes(x = `Grupo Problema`, y = `Nota do Consumidor`)) +
   geom_jitter(stat = "identity", alpha = 0.3,
               aes(colour = segsub$`Segmento de Mercado`)) +
+  #seta as cores dos segmentos manualmente
   scale_colour_manual(values = 
       c("Bancos, Financeiras e Administradoras de Cartão" = "red",
       "Comércio Eletrônico" = "green",
@@ -682,6 +729,8 @@ ggplot(segsub, aes(x = `Grupo Problema`, y = `Nota do Consumidor`)) +
 Percebe-se que o segmento comércio eletrônico é mal avaliado nos dois grupos de problema em que mais aparece. Telecomunicações parece ser mais bem avaliada em Cobrança do que no restante.
 
 ```{r echo = FALSE, message = FALSE, warning = FALSE}
+#busca as notas médias por segmento e por grupo problema
+#cria uma coluna para cada grupo problema
 var <- na.omit(segsub) %>%
   select(`Nota do Consumidor`, `Grupo Problema`, `Segmento de Mercado`) %>%
   group_by(`Segmento de Mercado`) %>%
@@ -689,6 +738,7 @@ var <- na.omit(segsub) %>%
             cobranca = mean(`Nota do Consumidor`[`Grupo Problema` == 'Cobrança / Contestação']), contrato = mean(`Nota do Consumidor`[`Grupo Problema` == 'Contrato / Oferta']), entrega = mean(`Nota do Consumidor`[`Grupo Problema` == 'Entrega do Produto']), 
             vicio = mean(`Nota do Consumidor`[`Grupo Problema` == 'Vício de Qualidade']))
 
+#mostra a variável acima como tabela
 kable(var, caption = 'Notas médias por grupo de problema') %>%
   kable_styling(full_width = T)
 ```
@@ -706,6 +756,7 @@ ggplot(var, aes(x = `Faixa Etária`, y = `Nota do Consumidor`, fill = Sexo)) +
                             "51 a 60", "61 a 70", "mais de 70")) +
   theme(axis.title.x = element_blank())
 
+#remove a variável da memória
 rm(segsub)
 ```
 
@@ -719,9 +770,11 @@ Agora vamos analisar a fundo cada um dos segmentos, criando os índices apresenta
 Índices
 
 ```{r echo = FALSE, message = FALSE, warning = FALSE}
+#cria um subset apenas com as reclamações de telecomunicações
 telecom <- subset(rec, `Segmento de Mercado` ==
   'Operadoras de Telecomunicações (Telefonia, Internet, TV por assinatura)')
 
+#busca o índice de solução
 var <- telecom %>%
   select(`Avaliação Reclamação`, `Nome`, `Nota do Consumidor`) %>%
   group_by(`Nome`) %>%
@@ -739,6 +792,7 @@ p1 <- ggplot(var, aes(x = reorder(Nome, -solucao), y = solucao)) +
   scale_x_discrete(labels = var$Nome) +
   theme(axis.title.x = element_blank())
 
+#busca o índice de satisfação
 var <- telecom %>%
   select(`Avaliação Reclamação`, `Nome`, `Nota do Consumidor`) %>%
   filter(complete.cases(`Nota do Consumidor`)) %>%
@@ -753,6 +807,7 @@ p2 <- ggplot(var, aes(x = reorder(Nome, -media), y = media)) +
   scale_x_discrete(labels = var$Nome) + 
   theme(axis.title.x = element_blank())
 
+#busca o tempo médio de resposta
 var <- telecom %>%
   select(`Tempo Resposta`, `Nome`, `Nota do Consumidor`) %>%
   filter(complete.cases(`Tempo Resposta`)) %>%
@@ -767,6 +822,7 @@ p3 <- ggplot(var, aes(x = reorder(Nome,media), y = media)) +
   scale_x_discrete(labels = var$Nome) + 
   theme(axis.title.x = element_blank())
 
+#busca as reclamações respondidas
 var <- telecom %>%
   select(`Respondida`, `Nome`, `Nota do Consumidor`) %>%
   group_by(`Nome`) %>%
@@ -793,6 +849,9 @@ Analisando os índices acima, percebe-se que a Oi é a líder em número de reclamaç
 Grupos de Problema por Empresa
 
 ```{r echo = FALSE, message = FALSE, warning = FALSE}
+#busca o número de ocorrências e a frequência relativa por empresa e por
+#grupo problema
+#cria a coluna 'pos' que dá a posição do rótulo de dados no gráfico
 var <- telecom %>%
   select(`Nome`, `Grupo Problema`) %>%
   group_by(`Nome`, `Grupo Problema`) %>%
@@ -814,6 +873,7 @@ Observa-se que a Tim e a Claro apresentam maior concentração de reclamações no g
 Nota Média das Empresas por Estado
 
 ```{r echo = FALSE, message = FALSE, warning = FALSE, fig.width = 8}
+#busca o número de ocorrências por empresa e por estado
 var <- telecom %>%
   select(`newUF`, `Segmento de Mercado`, `Nome`, `Nota do Consumidor`) %>%
   filter(complete.cases(telecom)) %>%
@@ -835,8 +895,10 @@ ggplot() + geom_map(data = var,
 Índices
 
 ```{r echo = FALSE, message = FALSE, warning = FALSE}
+#cria subset apenas com as reclamações de comércio eletrônico
 ecomm <- subset(rec, `Segmento de Mercado`=='Comércio Eletrônico')
 
+#cria índice de solução
 var <- ecomm %>%
   select(`Avaliação Reclamação`, `Nome`, `Nota do Consumidor`) %>%
   group_by(`Nome`) %>%
@@ -853,7 +915,8 @@ var <- ecomm %>%
                 vjust = 1), color = "White") +
   scale_x_discrete(labels = var$Nome) +
     theme(axis.title.x = element_blank())
-  
+
+#cria índice de satisfação
   var <- ecomm %>%
   select(`Avaliação Reclamação`, `Nome`, `Nota do Consumidor`) %>%
   filter(complete.cases(`Nota do Consumidor`), Nome == 'Walmart' |
@@ -873,6 +936,7 @@ var <- ecomm %>%
   scale_x_discrete(labels = var$Nome) +
     theme(axis.title.x = element_blank())
   
+#cria tempo médio de resposta  
   var <- ecomm %>%
   select(`Tempo Resposta`, `Nome`, `Nota do Consumidor`) %>%
   filter(complete.cases(`Tempo Resposta`)) %>%
@@ -889,6 +953,7 @@ var <- ecomm %>%
   scale_x_discrete(labels = var$Nome) +
   theme(axis.title.x = element_blank())
   
+#cria reclamações respondidas
   var <- ecomm %>%
   select(`Respondida`, `Nome`, `Nota do Consumidor`) %>%
   group_by(`Nome`) %>%
@@ -915,6 +980,9 @@ Aqui, percebe-se que, apesar da correlação entre nota e índice de solução, a emp
 Grupos de Problema por Empresa
 
 ```{r echo = FALSE, message = FALSE, warning = FALSE}
+#busca o número de ocorrências e a frequência relativa por empresa e por
+#grupo problema
+#cria a coluna 'pos' que dá a posição do rótulo de dados no gráfico
 var <- ecomm %>%
   select(`Nome`, `Grupo Problema`) %>%
   filter(Nome=='Walmart' | Nome=='Americanas' | Nome=='Extra' | 
@@ -938,6 +1006,7 @@ Percebe-se que a Walmart, a Submarino e o Extra possuem maior concentração de re
 Nota Média das Empresas por Estado
 
 ```{r echo = FALSE, message = FALSE, warning = FALSE, fig.width = 8}
+#busca o número de ocorrências por empresa e por estado
 var <- ecomm %>%
   select(`newUF`, `Segmento de Mercado`, `Nome`, `Nota do Consumidor`) %>%
   filter(complete.cases(ecomm), Nome=='Walmart' | Nome=='Americanas' |
@@ -954,6 +1023,7 @@ ggplot() + geom_map(data = var, aes(map_id = newUF, fill = media),
       expand_limits(x = brasil$long, y = brasil$lat) +
   facet_wrap(~`Nome`, ncol = 3)
 
+#remove a variável da memória
 rm(ecomm)
 ```
 
@@ -963,9 +1033,11 @@ rm(ecomm)
 Índices
 
 ```{r echo = FALSE, message = FALSE, warning = FALSE}
+#cria um subset apenas com as reclamações de bancos
 banks <- subset(rec, `Segmento de Mercado` ==
                   'Bancos, Financeiras e Administradoras de Cartão')
 
+#cria o índice de solução
 var <- banks %>%
   select(`Avaliação Reclamação`, `Nome`, `Nota do Consumidor`) %>%
   group_by(`Nome`) %>%
@@ -983,6 +1055,7 @@ var <- banks %>%
   scale_x_discrete(labels = var$Nome) +
     theme(axis.title.x = element_blank())
   
+#cria o índice de satisfação
   var <- banks %>%
   select(`Avaliação Reclamação`, `Nome`, `Nota do Consumidor`) %>%
   filter(complete.cases(`Nota do Consumidor`)) %>%
@@ -999,6 +1072,7 @@ var <- banks %>%
   scale_x_discrete(labels = var$Nome) +
     theme(axis.title.x = element_blank())
   
+#cria o tempo médio de resposta  
   var <- banks %>%
   select(`Tempo Resposta`, `Nome`, `Nota do Consumidor`) %>%
   filter(complete.cases(`Tempo Resposta`)) %>%
@@ -1015,6 +1089,7 @@ var <- banks %>%
   scale_x_discrete(labels = var$Nome) +
     theme(axis.title.x = element_blank())
   
+#cria as reclamações respondidas
   var <- banks %>%
   select(`Respondida`, `Nome`, `Nota do Consumidor`) %>%
   group_by(`Nome`) %>%
@@ -1041,6 +1116,9 @@ Entre os Bancos, o Bradesco tem os melhores índices de solução e satisfação e o 
 Grupo de Problema por Empresa
 
 ```{r echo = FALSE, message = FALSE, warning = FALSE}
+#busca o número de ocorrências e a frequência relativa por empresa e por
+#grupo problema
+#cria a coluna 'pos' que dá a posição do rótulo de dados no gráfico
 var <- banks %>%
   select(`Nome`, `Grupo Problema`) %>%
   filter(`Nome`=='Itaú' | `Nome`=='Caixa' | `Nome`=='Banco do Brasil' |
@@ -1064,6 +1142,7 @@ Neste gráfico, observa-se uma distribuição parecida dos grupos de problema entre
 Nota Média das Empresas por Estado
 
 ```{r echo = FALSE, message = FALSE, warning = FALSE, fig.width = 8}
+#busca o número de ocorrências por empresa e por estado
 var <- banks %>%
   select(`newUF`, `Segmento de Mercado`, `Nome`, `Nota do Consumidor`) %>%
   filter(complete.cases(banks), `Nome`=='Itaú' | `Nome`=='Caixa' |
@@ -1080,6 +1159,7 @@ ggplot() + geom_map(data = var, aes(map_id = newUF, fill = media),
       expand_limits(x = brasil$long, y = brasil$lat) +
   facet_wrap(~`Nome`, ncol = 3)
 
+#remove a variável da memória
 rm(banks)
 ```
 
@@ -1091,6 +1171,7 @@ Aqui, tem-se idéia inclusive da distribuição dos bancos ao longo da extensão ter
 Para esta seção foram escolhidos os gráficos do segmento de Telecomunicações por ter sido o campeão de reclamações e, também, por possuir mais empatia com os reclamantes.
 
 ```{r echo = FALSE, message = FALSE, warning = FALSE}
+#cria índice de solução
 var <- telecom %>%
   select(`Avaliação Reclamação`, `Nome`, `Nota do Consumidor`) %>%
   group_by(`Nome`) %>%
@@ -1110,6 +1191,7 @@ p1 <- ggplot(var, aes(x = reorder(Nome, -n), y = solucao)) +
       axis.title.x = element_blank(),
       plot.title = element_text(hjust = 0.5))
 
+#cria índice de satisfação
 var <- telecom %>%
   select(`Avaliação Reclamação`, `Nome`, `Nota do Consumidor`) %>%
   filter(complete.cases(`Nota do Consumidor`)) %>%
@@ -1128,6 +1210,7 @@ p2 <- ggplot(var, aes(x = reorder(Nome, -n), y = media)) +
       axis.title.x = element_blank(),
       plot.title = element_text(hjust = 0.5))
 
+#cria tempo médio de resposta
 var <- telecom %>%
   select(`Tempo Resposta`, `Nome`, `Nota do Consumidor`) %>%
   filter(complete.cases(`Tempo Resposta`)) %>%
@@ -1146,6 +1229,7 @@ p3 <- ggplot(var, aes(x = reorder(Nome, -n), y = media)) +
       axis.title.x = element_blank(),
       plot.title = element_text(hjust = 0.5))
 
+#cria reclamações respondidas
 var <- telecom %>%
   select(`Respondida`, `Nome`, `Nota do Consumidor`) %>%
   group_by(`Nome`) %>%
@@ -1173,6 +1257,9 @@ Percebe-se, também, a ausência de correlação entre tempo de resposta e nota do c
 
 
 ```{r echo = FALSE, message = FALSE, warning = FALSE}
+#busca o número de ocorrências e a frequência relativa por empresa e por
+#grupo problema
+#cria a coluna 'pos' que dá a posição do rótulo de dados no gráfico
 var <- telecom %>%
   select(`Nome`, `Grupo Problema`) %>%
   group_by(`Nome`, `Grupo Problema`) %>%
@@ -1199,6 +1286,7 @@ O que não é surpreendente, já que essas empresas são conhecidas por causarem tra
 
 
 ```{r echo = FALSE, message = FALSE, warning = FALSE, fig.width = 8}
+#busca o número de ocorrências por empresa e por estado
 var <- telecom %>%
   select(`newUF`, `Segmento de Mercado`, `Nome`, `Nota do Consumidor`) %>%
   filter(complete.cases(telecom)) %>%
